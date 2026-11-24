@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <rect width="120" height="96" rx="18" fill="#231B16"/>
+  <!-- Right V (Brand Champagne Sand #C0AA8E) -->
+  <path d="M53 16L66.5 42.5M72.5 54.2L86 81L112 16" stroke="#C0AA8E" stroke-width="4.2" stroke-linecap="square" stroke-linejoin="miter"/>
+  <!-- Left V with signature double inner arm (Warm Ivory #F6F1EA) -->
+  <path d="M12 16H27L43 48" stroke="#F6F1EA" stroke-width="4.2" stroke-linecap="square" stroke-linejoin="miter"/>
+  <path d="M12 16L48 81L82 16" stroke="#F6F1EA" stroke-width="4.2" stroke-linecap="square" stroke-linejoin="miter"/>
+</svg>

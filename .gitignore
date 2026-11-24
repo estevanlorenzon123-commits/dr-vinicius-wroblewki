@@ -1,0 +1,8 @@
+# macOS & Editor
+.DS_Store
+.vscode/
+.idea/
+
+# Raw unoptimized source captures in root (optimized production assets live in assets/images/)
+Gemini_Generated_Image_*
+SCR-*
