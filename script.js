@@ -1,9 +1,14 @@
 /* ==========================================================================
-   Dr. Vinicius Wroblewki — Interactive Clinical & Mobile Conversion Logic
+   Dr. Vinicius Wroblewki — Interactive Clinical, Motion & Conversion Logic
    ========================================================================== */
 
 (() => {
   const WHATSAPP_NUMBER = '5527998975841';
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (!prefersReducedMotion) {
+    document.documentElement.classList.add('has-motion');
+  }
 
   function buildWhatsAppUrl(message) {
     return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
@@ -44,11 +49,166 @@
     });
   }
 
-  // 2. Interactive Before & After Curtain Slider (Mouse + Direct Touch Drag)
+  // 2. Fast & Elegant Scroll Reveal Choreography + Active Nav Tracking
+  if (!prefersReducedMotion && 'IntersectionObserver' in window) {
+    const revealGroups = [
+      { selector: '.section-header-split > *', stagger: 65 },
+      { selector: '.procedure-card', stagger: 55 },
+      { selector: '.featured-comparison-box', stagger: 0 },
+      { selector: '.results-filter-bar', stagger: 0 },
+      { selector: '.case-card', stagger: 50 },
+      { selector: '.ultraformer-grid > div:first-child > .section-kicker, .ultraformer-grid > div:first-child > .section-heading, .ultraformer-lead, .ultraformer-section .hero-cta-group', stagger: 55 },
+      { selector: '.ultra-pillar', stagger: 65 },
+      { selector: '.ultraformer-showcase', stagger: 80 },
+      { selector: '.specialist-card-visual', stagger: 0 },
+      { selector: '.specialist-copy > .section-kicker, .specialist-copy > .section-heading, .specialist-copy > p', stagger: 55 },
+      { selector: '.formation-row', stagger: 60 },
+      { selector: '.journey-section .section-kicker, .journey-section .section-heading', stagger: 55 },
+      { selector: '.journey-step', stagger: 75 },
+      { selector: '.concierge-card', stagger: 0 },
+      { selector: '.locations-column > *', stagger: 65 },
+      { selector: '.faq-layout > div:first-child > *', stagger: 55 },
+      { selector: '.faq-item', stagger: 45 },
+      { selector: '.footer-top > *', stagger: 60 }
+    ];
+
+    const allRevealTargets = [];
+
+    revealGroups.forEach(({ selector, stagger }) => {
+      const nodes = document.querySelectorAll(selector);
+      nodes.forEach((node, idx) => {
+        node.setAttribute('data-reveal', '');
+        if (stagger > 0) {
+          const delayMs = Math.min((idx % 6) * stagger, 210);
+          node.style.setProperty('--reveal-delay', `${delayMs}ms`);
+        }
+        allRevealTargets.push(node);
+      });
+    });
+
+    const revealObserver = new IntersectionObserver(
+      (entries, obs) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-inview');
+            obs.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.08, rootMargin: '0px 0px -32px 0px' }
+    );
+
+    allRevealTargets.forEach((el) => revealObserver.observe(el));
+  }
+
+  // 3. Scroll Progress Bar, Sticky Header Polish & Subtle Hero Scroll Parallax
+  const scrollProgressEl = document.querySelector('[data-scroll-progress]');
+  const heroSection = document.getElementById('inicio');
+  const heroVisual = document.querySelector('[data-hero-visual]');
+  const navLinks = document.querySelectorAll('.primary-nav > a[href^="#"]');
+  const trackedSections = Array.from(navLinks)
+    .map((a) => document.querySelector(a.getAttribute('href')))
+    .filter(Boolean);
+
+  let scrollTicking = false;
+
+  function onScrollFrame() {
+    const scrollY = window.scrollY || window.pageYOffset;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = docHeight > 0 ? Math.min(1, Math.max(0, scrollY / docHeight)) : 0;
+
+    if (scrollProgressEl) {
+      scrollProgressEl.style.transform = `scaleX(${progress.toFixed(4)})`;
+    }
+
+    if (header) {
+      header.classList.toggle('is-scrolled', scrollY > 20);
+    }
+
+    if (!prefersReducedMotion && heroSection && heroVisual) {
+      const heroH = heroSection.offsetHeight || 700;
+      if (scrollY <= heroH * 1.2) {
+        const ratio = Math.min(1, Math.max(0, scrollY / heroH));
+        heroVisual.style.setProperty('--hero-scroll', ratio.toFixed(3));
+      }
+    }
+
+    // Highlight active section in top nav
+    if (trackedSections.length) {
+      const triggerLine = scrollY + 160;
+      let activeId = '';
+      trackedSections.forEach((sec) => {
+        if (sec.offsetTop <= triggerLine) {
+          activeId = sec.id;
+        }
+      });
+      navLinks.forEach((link) => {
+        link.classList.toggle('is-current', link.getAttribute('href') === `#${activeId}`);
+      });
+    }
+
+    scrollTicking = false;
+  }
+
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (!scrollTicking) {
+        window.requestAnimationFrame(onScrollFrame);
+        scrollTicking = true;
+      }
+    },
+    { passive: true }
+  );
+  onScrollFrame();
+
+  // 4. Desktop Hero Micro-Parallax (3D Architectural Depth on Pointer Move)
+  if (
+    !prefersReducedMotion &&
+    heroSection &&
+    window.matchMedia('(hover: hover) and (pointer: fine)').matches
+  ) {
+    let targetX = 0;
+    let targetY = 0;
+    let currentX = 0;
+    let currentY = 0;
+    let rafId = null;
+
+    const animateHeroDepth = () => {
+      currentX += (targetX - currentX) * 0.1;
+      currentY += (targetY - currentY) * 0.1;
+      heroSection.style.setProperty('--px', currentX.toFixed(4));
+      heroSection.style.setProperty('--py', currentY.toFixed(4));
+
+      if (Math.abs(targetX - currentX) > 0.002 || Math.abs(targetY - currentY) > 0.002) {
+        rafId = window.requestAnimationFrame(animateHeroDepth);
+      } else {
+        rafId = null;
+      }
+    };
+
+    heroSection.addEventListener('pointermove', (e) => {
+      const rect = heroSection.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      targetX = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+      targetY = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+      if (!rafId) rafId = window.requestAnimationFrame(animateHeroDepth);
+    });
+
+    heroSection.addEventListener('pointerleave', () => {
+      targetX = 0;
+      targetY = 0;
+      if (!rafId) rafId = window.requestAnimationFrame(animateHeroDepth);
+    });
+  }
+
+  // 5. Interactive Before & After Curtain Slider (Mouse + Direct Touch + Entrance Cue)
   const comparisonSlider = document.querySelector('[data-comparison-slider]');
   const comparisonInput = document.querySelector('[data-comparison-range]');
 
   if (comparisonSlider && comparisonInput) {
+    let userInteractedWithSlider = false;
+
     const syncSlider = (rawVal) => {
       const clamped = Math.min(92, Math.max(8, Number(rawVal)));
       comparisonSlider.style.setProperty('--pos', `${clamped}%`);
@@ -56,10 +216,10 @@
     };
 
     comparisonInput.addEventListener('input', (e) => {
+      userInteractedWithSlider = true;
       syncSlider(e.target.value);
     });
 
-    // Smooth direct touch/pointer scrubbing anywhere inside the image frame
     let isPointerDragging = false;
 
     const updateFromClientX = (clientX) => {
@@ -70,15 +230,20 @@
     };
 
     comparisonSlider.addEventListener('pointerdown', (e) => {
+      userInteractedWithSlider = true;
       if (e.target === comparisonInput) return;
       isPointerDragging = true;
       updateFromClientX(e.clientX);
     });
 
-    window.addEventListener('pointermove', (e) => {
-      if (!isPointerDragging) return;
-      updateFromClientX(e.clientX);
-    }, { passive: true });
+    window.addEventListener(
+      'pointermove',
+      (e) => {
+        if (!isPointerDragging) return;
+        updateFromClientX(e.clientX);
+      },
+      { passive: true }
+    );
 
     window.addEventListener('pointerup', () => {
       isPointerDragging = false;
@@ -89,9 +254,35 @@
     });
 
     syncSlider(comparisonInput.value);
+
+    // One-time subtle curtain micro-nudge when scrolled into view so users spot interactivity
+    if (!prefersReducedMotion && 'IntersectionObserver' in window) {
+      const cueObserver = new IntersectionObserver(
+        (entries, obs) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              obs.unobserve(entry.target);
+              if (userInteractedWithSlider) return;
+              const start = performance.now();
+              const duration = 760;
+              const runCue = (now) => {
+                if (userInteractedWithSlider) return;
+                const t = Math.min(1, (now - start) / duration);
+                const wave = Math.sin(t * Math.PI * 2) * (1 - t) * 7.5;
+                syncSlider(50 - wave);
+                if (t < 1) window.requestAnimationFrame(runCue);
+              };
+              window.setTimeout(() => window.requestAnimationFrame(runCue), 260);
+            }
+          });
+        },
+        { threshold: 0.45 }
+      );
+      cueObserver.observe(comparisonSlider);
+    }
   }
 
-  // 3. Before & After Category Filter Tabs (with Horizontal Mobile Rail Centering)
+  // 6. Before & After Category Filter Tabs (with Smooth Card Re-Entrance)
   const filterRail = document.querySelector('.filter-tabs');
   const filterButtons = document.querySelectorAll('[data-filter]');
   const caseCards = document.querySelectorAll('[data-case-category]');
@@ -112,10 +303,26 @@
       if (active) activeBtn = btn;
     });
 
+    let visibleIdx = 0;
     caseCards.forEach((card) => {
       const cats = card.dataset.caseCategory.split(' ');
       const show = category === 'todos' || cats.includes(category);
       card.hidden = !show;
+      if (show) {
+        card.classList.add('is-inview');
+        if (!prefersReducedMotion) {
+          card.classList.remove('is-filtering-in');
+          card.style.setProperty('--filter-delay', `${visibleIdx * 40}ms`);
+          void card.offsetWidth;
+          card.classList.add('is-filtering-in');
+          card.addEventListener(
+            'animationend',
+            () => card.classList.remove('is-filtering-in'),
+            { once: true }
+          );
+          visibleIdx += 1;
+        }
+      }
     });
 
     if (activeBtn) centerTabInRail(activeBtn);
@@ -125,7 +332,6 @@
     btn.addEventListener('click', () => activateFilter(btn.dataset.filter));
   });
 
-  // Jump from Procedure card "Ver antes e depois" to matching filter
   document.querySelectorAll('[data-jump-filter]').forEach((trigger) => {
     trigger.addEventListener('click', (e) => {
       const targetFilter = trigger.dataset.jumpFilter;
@@ -140,14 +346,14 @@
     });
   });
 
-  // 4. Contextual WhatsApp Links (Procedure & Case Specific)
+  // 7. Contextual WhatsApp Links
   document.querySelectorAll('[data-wa-topic]').forEach((el) => {
     const topic = el.dataset.waTopic;
     const msg = `Olá, equipe do Dr. Vinicius Wroblewki! Vim pelo site e gostaria de agendar uma avaliação para ${topic}.`;
     el.setAttribute('href', buildWhatsAppUrl(msg));
   });
 
-  // 5. Clinical Case Lightbox Modal
+  // 8. Clinical Case Lightbox Modal
   const modal = document.getElementById('case-modal');
   const modalImg = document.getElementById('modal-case-img');
   const modalTitle = document.getElementById('modal-case-title');
@@ -199,7 +405,7 @@
     }
   });
 
-  // 6. Interactive WhatsApp Assessment Concierge
+  // 9. Interactive WhatsApp Assessment Concierge
   const selectedTopics = new Set(['Harmonização Facial']);
   let selectedCity = 'Vitória - ES';
 
@@ -249,8 +455,7 @@
     });
   }
 
-  // 7. Smart Mobile Floating WhatsApp Visibility
-  // Tucks away on mobile when Hero primary CTA or Concierge Form is already in viewport
+  // 10. Smart Mobile Floating WhatsApp Visibility
   const whatsappFloat = document.querySelector('.whatsapp-float');
   const heroCta = document.querySelector('.hero-section .hero-cta-group');
   const conciergeCard = document.getElementById('agendamento');
