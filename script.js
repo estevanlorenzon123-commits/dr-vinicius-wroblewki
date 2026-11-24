@@ -38,7 +38,7 @@
     });
 
     window.addEventListener('resize', () => {
-      if (window.innerWidth > 900 && nav.classList.contains('is-open')) {
+      if (window.innerWidth > 1080 && nav.classList.contains('is-open')) {
         setMenuOpen(false);
       }
     });
